@@ -1,8 +1,8 @@
-// POST /api/tasar — tasa una oferta: { lote, oferta, partidaId, esReintento? }.
+// POST /api/tasar — tasa una oferta: { lote, oferta, partidaId }. Oferta vacía = sin oferta.
 // Los errores llevan un mensaje en la voz de Bartolo para poder mostrarlo tal cual.
 import { crearLimitador, ipDeLaPeticion, VENTANAS_DEL_JUEGO } from "@/lib/limite";
 import { esquemaPeticion } from "@/tasacion/peticion";
-import { LoteInexistente, OfertaVacia, tasarOferta } from "@/tasacion/servicio";
+import { LoteCerrado, LoteInexistente, tasarOferta } from "@/tasacion/servicio";
 
 // Un solo limitador por servidor. En desarrollo se guarda en globalThis para que las
 // recargas de Next no reinicien los contadores.
@@ -35,7 +35,9 @@ export async function POST(request: Request) {
     return Response.json(await tasarOferta(peticion.data));
   } catch (e) {
     if (e instanceof LoteInexistente) return error(404, "Ese lote no está en mi catálogo.");
-    if (e instanceof OfertaVacia) return error(400, "¡Una oferta vacía no se subasta, pillo!");
+    if (e instanceof LoteCerrado) {
+      return error(409, "Ese lote ya está adjudicado, campeón. Pase al siguiente.");
+    }
     console.error("[tasar] fallo al tasar:", e);
     return error(503, "El tasador salió a tomar aire. Vuelva a pujar en un momento.");
   }

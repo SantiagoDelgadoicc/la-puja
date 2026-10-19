@@ -55,8 +55,9 @@ Meta: una oferta enviada a la API vuelve tasada (nota, martillazos, precio, come
 - [x] **H15 · API de tasación con caché** — `/api/tasar` devuelve la tasación; la segunda vez sale de la caché y la oferta queda registrada.
 - [x] **H16 · Límite de peticiones** — por IP, 10/min y 300/día; la petición 11 en un minuto se rechaza con un mensaje de Bartolo.
   - Decidido con el usuario: cuentan todas las ofertas (salgan o no de la caché); contadores en memoria del servidor (se reinician al reiniciarlo; en la fase 8 pasan a Postgres o Redis).
-- [ ] **H17 · Reglas del lote** — mercancía falsa con reintento (tope 5 martillazos), "eso ya se vendió" (palabra repetida), sin oferta ($0).
-- [ ] **H18 · Calibración** — informe con ~50 ofertas de prueba y sus martillazos, ajustado con el usuario.
+- [x] **H17 · Reglas del lote** — mercancía falsa con reintento (tope 5 martillazos), "eso ya se vendió" (palabra repetida), sin oferta ($0).
+  - Nota para H20: el servidor no controla la cuenta atrás; al agotarse, el navegador debe enviar la oferta vacía (`""`), que cierra el lote en $0. Si hiciera falta blindarlo (fase 8), habría que registrar la hora de inicio de cada lote.
+- [~] **H18 · Calibración** — informe con ~50 ofertas de prueba y sus martillazos, ajustado con el usuario.
   - Preguntar antes: ¿se siente justa la tasación? Qué casos ajustar.
 
 ## Fase 3 — Bucle de juego jugable
@@ -141,3 +142,4 @@ Meta: demo local probada, pulida y marcada como v0.1.
 - 2026-10-16 · H14 · `src/lib/precio.ts`: nota (80/20 y 40/60), tramos "más exigente arriba" (decisión del usuario), precio logarítmico por nivel en centavos con redondeo de subasta a 3 cifras, rareza de jugadores logarítmica con transición 50 → 500 (hasta 50 %), `formatearPrecio`. Referencias de calibración del prompt movidas a los centros de los nuevos tramos (test que lo vigila). 17 tests (64 en total). Ficha y doc técnico actualizados. · Completado
 - 2026-10-16 · H15 · `POST /api/tasar` (`route.ts` + `servicio.ts` con `server-only` + contrato en `peticion.ts`): normaliza, caché en `tasaciones` (sin duplicar ante carreras), IA con respaldo, precio con datos de jugadores y registro en `ofertas`. Prueba real: 1ª vez la IA, 2ª vez (escrita distinto) de la caché en 50 ms; 404/400 con mensajes de Bartolo; en la base, 1 tasación y 2 ofertas. 5 tests (69 en total); build OK. · Completado
 - 2026-10-16 · H16 · `src/lib/limite.ts`: ventanas deslizantes por IP (10/min, 300/día) en memoria (decisión del usuario), aplicado al principio de `/api/tasar` a toda oferta; 429 con `Retry-After` y mensaje de Bartolo. Prueba real: 10 ofertas 200 y la 11.ª 429 · Retry-After 60. 7 tests con reloj simulado (76 en total). · Completado
+- 2026-10-19 · H17 · `src/tasacion/reglas.ts`: estado del lote (primer intento / reintento / cerrado) deducido en el servidor de lo registrado en la partida; mercancía falsa con reintento (tope 5), "eso ya se vendió" (misma forma canónica aceptada), sin oferta = oferta vacía ($0, sin reintento), ejemplo del lote con tope 1, lote cerrado → 409. Prueba real: mesa→tilacino (5 🔨), granizo→Granizo (ya vendido)→glaciar (4 🔨), reintento vacío $0, Ollie 1 🔨; un 429 real de Groq lo respondió Gemini. 19 tests (95 en total); build OK. · Completado
